@@ -1,19 +1,16 @@
 package xyz.yoav.weaponizedscreen;
 
-import android.app.Activity;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.os.IBinder;
-import android.text.LoginFilter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
@@ -27,10 +24,8 @@ public class OverlayService extends Service {
     private WindowManager mWindowManager;
     private View mOverlayView;
 
-    private int numParticles = 80;
-    private long timeToLive = 1000;
-    private int drawableResId = R.drawable.particle;
-    Drawable particle1;
+
+
 
     public OverlayService() {
     }
@@ -43,17 +38,10 @@ public class OverlayService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mOverlayView = LayoutInflater.from(this).inflate(R.layout.wheel, null);
-        particle1 = ResourcesCompat.getDrawable(getResources(), drawableResId, null);
-
+        EffectManager.initializeDrawables(getResources());
+        mOverlayView = LayoutInflater.from(this).inflate(R.layout.wheel, null); //inflate entire layout
         mOverlayView.setOnTouchListener((v, event) -> { windowTouched(event); return true; });
-
-
-        mOverlayView.findViewById(R.id.quitBtn).setOnClickListener(v -> {
-            Log.d(TAG, "## ouchy!");
-            OverlayService.this.stopService(new Intent(OverlayService.this.getApplicationContext(), OverlayService.class));
-            OverlayService.this.onDestroy();
-        });
+        mOverlayView.findViewById(R.id.quitBtn).setOnClickListener(v -> { quitApp(); }); //set quit btn
 
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -66,11 +54,14 @@ public class OverlayService extends Service {
     }
 
     private void windowTouched(MotionEvent event) {
-        Log.d(TAG,"## click! particle! x:" + event.getX() + " , y:" + event.getY());
-        new ParticleSystem((ViewGroup)mOverlayView, numParticles, particle1 , timeToLive)
-                .setSpeedRange(0.2f, 0.5f)
-                .emit ((int)event.getX(), (int)event.getY(), 200, 2000);
+        EffectManager.playCurrentEffect((ViewGroup)mOverlayView,(int)event.getX(), (int)event.getY());
     }
+
+    private void quitApp() {
+        OverlayService.this.stopService(new Intent(OverlayService.this.getApplicationContext(), OverlayService.class));
+        OverlayService.this.onDestroy();
+    }
+
 
     @Override
     public void onDestroy() {
